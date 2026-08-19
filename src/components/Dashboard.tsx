@@ -255,14 +255,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="mt-3">
             <div className="text-sm font-semibold text-white">ICBC (ASIA) & Wise Multi-Currency</div>
             <div className="text-xs text-slate-400 space-y-1 mt-2 pt-2 border-t border-slate-800/80">
-              <div className="flex justify-between">
-                <span>ICBC USD :</span>
-                <span className="font-mono text-emerald-400">$148,500.00</span>
-              </div>
-              <div className="flex justify-between">
-                <span>ICBC HKD :</span>
-                <span className="font-mono text-blue-400">HK$850,000.00</span>
-              </div>
+              {company.bankAccounts.slice(0, 2).map((bank) => {
+                const inflows = payments
+                  .filter((p) => p.type === "inflow" && p.currency === bank.currency)
+                  .reduce((sum, p) => sum + p.amount, 0);
+                const outflows = payments
+                  .filter((p) => p.type === "outflow" && p.currency === bank.currency)
+                  .reduce((sum, p) => sum + p.amount, 0);
+                const balance = inflows - outflows;
+
+                return (
+                  <div key={bank.id} className="flex justify-between">
+                    <span>{bank.bankName.includes("HKD") ? "ICBC HKD :" : "ICBC USD :"}</span>
+                    <span className={`font-mono ${balance >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                      {formatCurrency(balance, bank.currency)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
