@@ -282,43 +282,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <FinancialCharts orders={orders} payments={payments} company={company} />
 
       {/* Multi-Currency Matrix */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-400" />
-            <h2 className="text-base font-bold text-white">Multi-Currency Native Breakdown</h2>
+            <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+            <h2 className="text-sm sm:text-base font-bold text-white">Multi-Currency Breakdown</h2>
           </div>
-          <span className="text-xs text-slate-400">Tracking in original transaction currencies</span>
+          <span className="text-[10px] sm:text-xs text-slate-400">Native currency totals</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {currencyStats.map((stat) => (
             <div
               key={stat.currency}
-              className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 hover:border-blue-500/40 transition"
+              className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 sm:p-4 hover:border-blue-500/40 transition"
             >
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <span className="font-bold text-base text-white">{stat.currency}</span>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-blue-300">
-                  {stat.currency === "USD" ? "1.00 USD" : `1 USD = ${rates[stat.currency]} ${stat.currency}`}
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span className="font-bold text-sm sm:text-base text-white">{stat.currency}</span>
+                <span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.5 rounded bg-slate-800 text-blue-300">
+                  {stat.currency === "USD" ? "Base" : `1 USD = ${rates[stat.currency]}`}
                 </span>
               </div>
 
-              <div className="mt-3 space-y-2 text-xs">
+              <div className="mt-2 space-y-1.5 text-xs">
                 <div>
-                  <span className="text-slate-400 block">Total Sales :</span>
-                  <span className="font-mono font-bold text-slate-200">{formatCurrency(stat.totalSales, stat.currency)}</span>
+                  <span className="text-slate-400 text-[10px] block">Sales :</span>
+                  <span className="font-mono font-bold text-slate-200 text-xs sm:text-sm">{formatCurrency(stat.totalSales, stat.currency)}</span>
                 </div>
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-emerald-400">Received: {formatCurrency(stat.paidSales, stat.currency)}</span>
+                <div className="flex justify-between text-[10px] sm:text-[11px]">
+                  <span className="text-emerald-400">Paid: {formatCurrency(stat.paidSales, stat.currency)}</span>
                   <span className="text-amber-400">Due: {formatCurrency(stat.dueSales, stat.currency)}</span>
                 </div>
 
-                <div className="pt-2 border-t border-slate-800/60">
-                  <span className="text-slate-400 block">Total Purchases :</span>
-                  <span className="font-mono font-bold text-slate-200">{formatCurrency(stat.totalPurchases, stat.currency)}</span>
+                <div className="pt-1.5 border-t border-slate-800/60">
+                  <span className="text-slate-400 text-[10px] block">Purchases :</span>
+                  <span className="font-mono font-bold text-slate-200 text-xs sm:text-sm">{formatCurrency(stat.totalPurchases, stat.currency)}</span>
                 </div>
-                <div className="flex justify-between text-[11px]">
+                <div className="flex justify-between text-[10px] sm:text-[11px]">
                   <span className="text-rose-400">Paid: {formatCurrency(stat.paidPurchases, stat.currency)}</span>
                   <span className="text-amber-400">Due: {formatCurrency(stat.duePurchases, stat.currency)}</span>
                 </div>
@@ -329,30 +329,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Grid: Installments Due & Recent Transactions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left 2 Cols: Installments Schedule */}
-        <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-amber-400" />
-              <h2 className="text-base font-bold text-white">Upcoming & Overdue Installments Schedule</h2>
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+              <h2 className="text-sm sm:text-base font-bold text-white">Upcoming & Overdue Installments</h2>
             </div>
-            <span className="text-xs bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30">
+            <span className="text-[10px] sm:text-xs bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-bold">
               {pendingInstallments.length} pending
             </span>
           </div>
 
           {pendingInstallments.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-sm">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-80" />
-              All deposits and balances are fully up to date!
+            <div className="text-center py-6 sm:py-8 text-slate-400 text-xs sm:text-sm">
+              <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-400 mx-auto mb-2 opacity-80" />
+              All deposits and balances are up to date!
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {pendingInstallments.slice(0, 6).map(({ order, inst, isOverdue, daysDiff }) => (
                 <div
                   key={inst.id}
-                  className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition ${
+                  className={`p-3 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition ${
                     isOverdue
                       ? "bg-rose-950/20 border-rose-800/60"
                       : daysDiff <= 7
