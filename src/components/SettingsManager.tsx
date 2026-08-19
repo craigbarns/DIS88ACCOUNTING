@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Building2, 
   DollarSign, 
@@ -8,9 +8,12 @@ import {
   Upload, 
   RefreshCw, 
   Save, 
-  Trash2,
-  CheckCircle2,
-  Sparkles
+  Trash2, 
+  CheckCircle2, 
+  Sparkles,
+  Server,
+  Activity,
+  ShieldCheck
 } from "lucide-react";
 import { CompanyProfile, Currency } from "../types";
 import { 
@@ -34,6 +37,22 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [formData, setFormData] = useState<CompanyProfile>(company);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<{
+    status: string;
+    engine: string;
+    partnerCount: number;
+    orderCount: number;
+    paymentCount: number;
+    lastUpdated?: string;
+  } | null>(null);
+
+  // Poll database status
+  useEffect(() => {
+    fetch("/api/status")
+      .then((r) => r.json())
+      .then((data) => setDbStatus(data))
+      .catch(() => setDbStatus(null));
+  }, []);
 
   const handleFieldChange = (field: keyof CompanyProfile, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -120,6 +139,56 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         <p className="text-slate-400 text-sm mt-0.5">
           Configure DISTRICT 88 LTD Hong Kong business details, live FX rates, and bank accounts.
         </p>
+      </div>
+
+      {/* Live Database Status Banner */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <Server className="w-5 h-5 text-blue-400" />
+            <div>
+              <h3 className="text-sm font-bold text-white">Cloud Database & Server Connection</h3>
+              <p className="text-xs text-slate-400">Real-time persistence across Mac, iPhone, and team devices</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-bold text-emerald-400 font-mono">
+              {dbStatus ? "ONLINE & SYNCHRONIZED" : "LOCAL CACHE ACTIVE"}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3 pt-1 text-xs">
+          <div>
+            <span className="text-slate-500 block">Database Engine:</span>
+            <span className="font-bold text-white font-mono">
+              {dbStatus?.engine || "Railway PostgreSQL"}
+            </span>
+          </div>
+          <div>
+            <span className="text-slate-500 block">Invoices / Orders:</span>
+            <span className="font-bold text-emerald-400 font-mono">
+              {dbStatus?.orderCount ?? 0} records
+            </span>
+          </div>
+          <div>
+            <span className="text-slate-500 block">Partners / Clients:</span>
+            <span className="font-bold text-blue-400 font-mono">
+              {dbStatus?.partnerCount ?? 0} contacts
+            </span>
+          </div>
+          <div>
+            <span className="text-slate-500 block">Recorded Payments:</span>
+            <span className="font-bold text-amber-400 font-mono">
+              {dbStatus?.paymentCount ?? 0} transactions
+            </span>
+          </div>
+        </div>
       </div>
 
       {saveSuccess && (
