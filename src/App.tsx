@@ -51,9 +51,11 @@ export function App() {
   const [orders, setOrders] = useState<OrderInvoice[]>(loadOrders);
   const [payments, setPayments] = useState<PaymentEntry[]>(loadPayments);
 
-  // Initial cloud database sync
+  // Initial & periodic background cloud database sync (Multi-user real-time sync)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) return;
+
+    const performSync = () => {
       fetchWorkspaceData().then((data) => {
         if (data) {
           if (data.companyProfile) {
@@ -74,7 +76,14 @@ export function App() {
           }
         }
       });
-    }
+    };
+
+    // Perform immediately on mount
+    performSync();
+
+    // Poll every 15 seconds so multiple users see each others updates automatically
+    const interval = setInterval(performSync, 15000);
+    return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   // Handle Logout
