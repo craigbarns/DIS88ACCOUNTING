@@ -368,9 +368,10 @@ app.post("/api/demo", async (req, res) => {
 });
 
 // ─── STATIC CLIENT ASSETS & SPA ROUTING ──────────────────────────────────────
-app.use(express.static(distPath, { maxAge: "1d" }));
+app.use(express.static(distPath, { maxAge: "1d", index: false }));
 
 app.use((req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
   res.sendFile(path.join(distPath, "index.html"));
 });
 
