@@ -1,4 +1,4 @@
-import { CompanyProfile, OrderInvoice, Partner, PaymentEntry, PaymentMethod } from "../types";
+import { CompanyProfile, OrderInvoice, Partner, PaymentEntry, PaymentMethod, ExpenseItem } from "../types";
 import { 
   initialCompanyProfile, 
   initialOrders, 
@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
   PARTNERS: "d88_partners",
   ORDERS: "d88_orders",
   PAYMENTS: "d88_payments",
+  EXPENSES: "d88_expenses",
 };
 
 export function loadCompanyProfile(): CompanyProfile {
@@ -88,6 +89,20 @@ export function loadPayments(): PaymentEntry[] {
 
 export function savePayments(payments: PaymentEntry[]): void {
   localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+}
+
+export function loadExpenses(): ExpenseItem[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+    if (data !== null) return JSON.parse(data);
+  } catch (e) {
+    console.error("Failed to load expenses from storage", e);
+  }
+  return [];
+}
+
+export function saveExpenses(expenses: ExpenseItem[]): void {
+  localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
 }
 
 export function recordPayment(
@@ -185,16 +200,18 @@ export function clearWorkspace(): void {
   savePartners([]);
   saveOrders([]);
   savePayments([]);
+  saveExpenses([]);
 }
 
 export function exportBackupJSON(): string {
   const backup = {
-    version: "2.0.0",
+    version: "2.1.0",
     exportedAt: new Date().toISOString(),
     companyProfile: loadCompanyProfile(),
     partners: loadPartners(),
     orders: loadOrders(),
     payments: loadPayments(),
+    expenses: loadExpenses(),
   };
   return JSON.stringify(backup, null, 2);
 }
@@ -206,6 +223,7 @@ export function importBackupJSON(jsonStr: string): boolean {
     if (data.partners) savePartners(data.partners);
     if (data.orders) saveOrders(data.orders);
     if (data.payments) savePayments(data.payments);
+    if (data.expenses) saveExpenses(data.expenses);
     return true;
   } catch (e) {
     console.error("Backup import failed", e);

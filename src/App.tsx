@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { ActiveTab, CompanyProfile, OrderInvoice, Partner, PaymentEntry, Currency, PaymentMethod } from "./types";
+import { 
+  ActiveTab, 
+  CompanyProfile, 
+  OrderInvoice, 
+  Partner, 
+  PaymentEntry, 
+  ExpenseItem, 
+  OfficeLocation, 
+  Currency, 
+  PaymentMethod 
+} from "./types";
 import { 
   loadCompanyProfile, 
   saveCompanyProfile, 
@@ -9,6 +19,8 @@ import {
   saveOrders, 
   loadPayments, 
   savePayments,
+  loadExpenses,
+  saveExpenses,
   recordPayment 
 } from "./services/storage";
 import { 
@@ -16,7 +28,8 @@ import {
   syncCompanyProfile, 
   syncPartners, 
   syncOrders, 
-  syncPayments 
+  syncPayments,
+  syncExpenses 
 } from "./services/api";
 import { exportToExcel } from "./services/export";
 
@@ -26,6 +39,7 @@ import { MobileNav } from "./components/MobileNav";
 import { Dashboard } from "./components/Dashboard";
 import { SalesManager } from "./components/SalesManager";
 import { PurchasesManager } from "./components/PurchasesManager";
+import { ExpensesManager } from "./components/ExpensesManager";
 import { PaymentsJournal } from "./components/PaymentsJournal";
 import { ProfitAnalysis } from "./components/ProfitAnalysis";
 import { PartnersManager } from "./components/PartnersManager";
@@ -34,6 +48,7 @@ import { SettingsManager } from "./components/SettingsManager";
 import { AddPaymentModal } from "./components/modals/AddPaymentModal";
 import { AddOrderModal } from "./components/modals/AddOrderModal";
 import { AddPartnerModal } from "./components/modals/AddPartnerModal";
+import { AddExpenseModal } from "./components/modals/AddExpenseModal";
 import { EmailReminderModal } from "./components/modals/EmailReminderModal";
 
 export function App() {
@@ -50,6 +65,7 @@ export function App() {
   const [partners, setPartners] = useState<Partner[]>(loadPartners);
   const [orders, setOrders] = useState<OrderInvoice[]>(loadOrders);
   const [payments, setPayments] = useState<PaymentEntry[]>(loadPayments);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(loadExpenses);
 
   // Initial & periodic background cloud database sync (Multi-user real-time sync)
   useEffect(() => {
@@ -73,6 +89,10 @@ export function App() {
           if (Array.isArray(data.payments)) {
             setPayments(data.payments);
             savePayments(data.payments);
+          }
+          if (Array.isArray(data.expenses)) {
+            setExpenses(data.expenses);
+            saveExpenses(data.expenses);
           }
         }
       });
@@ -108,6 +128,10 @@ export function App() {
   const [partnerModalDefaultType, setPartnerModalDefaultType] = useState<"client" | "supplier">("client");
   const [partnerToEdit, setPartnerToEdit] = useState<Partner | null>(null);
 
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [expenseToEdit, setExpenseToEdit] = useState<ExpenseItem | null>(null);
+  const [expenseDefaultOffice, setExpenseDefaultOffice] = useState<OfficeLocation>("shanghai");
+
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailModalOrder, setEmailModalOrder] = useState<OrderInvoice | null>(null);
 
@@ -130,6 +154,7 @@ export function App() {
     setPartners(loadPartners());
     setOrders(loadOrders());
     setPayments(loadPayments());
+    setExpenses(loadExpenses());
 
     fetchWorkspaceData().then((data) => {
       if (data) {
@@ -137,6 +162,7 @@ export function App() {
         if (Array.isArray(data.partners)) setPartners(data.partners);
         if (Array.isArray(data.orders)) setOrders(data.orders);
         if (Array.isArray(data.payments)) setPayments(data.payments);
+        if (Array.isArray(data.expenses)) setExpenses(data.expenses);
       }
     });
   };
@@ -249,6 +275,40 @@ export function App() {
     syncPartners(updated);
   };
 
+  // Expense Handlers (Shanghai & Hangzhou)
+  const handleOpenNewExpense = (office: OfficeLocation = "shanghai") => {
+    setExpenseDefaultOffice(office);
+    setExpenseToEdit(null);
+    setIsExpenseModalOpen(true);
+  };
+
+  const handleOpenEditExpense = (expense: ExpenseItem) => {
+    setExpenseDefaultOffice(expense.office);
+    setExpenseToEdit(expense);
+    setIsExpenseModalOpen(true);
+  };
+
+  const handleSaveExpense = (expense: ExpenseItem) => {
+    let updated: ExpenseItem[];
+    const exists = expenses.some((e) => e.id === expense.id);
+    if (exists) {
+      updated = expenses.map((e) => (e.id === expense.id ? expense : e));
+    } else {
+      updated = [expense, ...expenses];
+    }
+    setExpenses(updated);
+    saveExpenses(updated);
+    syncExpenses(updated);
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    if (!window.confirm("Are you sure you want to delete this office expense record?")) return;
+    const updated = expenses.filter((e) => e.id !== expenseId);
+    setExpenses(updated);
+    saveExpenses(updated);
+    syncExpenses(updated);
+  };
+
   // Excel Export
   const handleExportExcel = () => {
     exportToExcel(company, orders, payments, partners);
@@ -276,7 +336,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         {activeTab === "dashboard" && (
           <Dashboard
             company={company}
@@ -312,6 +372,16 @@ export function App() {
             onEditOrder={handleOpenEditOrder}
             onDeleteOrder={handleDeleteOrder}
             onRecordPayment={(order, instId) => handleOpenNewPayment(order, instId)}
+          />
+        )}
+
+        {activeTab === "expenses" && (
+          <ExpensesManager
+            expenses={expenses}
+            company={company}
+            onNewExpense={handleOpenNewExpense}
+            onEditExpense={handleOpenEditExpense}
+            onDeleteExpense={handleDeleteExpense}
           />
         )}
 
@@ -355,7 +425,7 @@ export function App() {
       <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
-            © {new Date().getFullYear()} <strong>{company.name}</strong> — Star House, Tsim Sha Tsui, Hong Kong. All rights reserved.
+            © {new Date().getFullYear()} <strong>{company.name}</strong> — Star House, Tsim Sha Tsui, Hong Kong • Shanghai & Hangzhou Offices.
           </span>
           <span className="font-mono text-slate-400">
             Base Currency: <strong className="text-blue-400">{company.baseCurrency}</strong> • Cloud Database Synchronized
@@ -399,6 +469,15 @@ export function App() {
         partnerToEdit={partnerToEdit}
         defaultType={partnerModalDefaultType}
         onSavePartner={handleSavePartner}
+      />
+
+      <AddExpenseModal
+        isOpen={isExpenseModalOpen}
+        onClose={() => setIsExpenseModalOpen(false)}
+        expenseToEdit={expenseToEdit}
+        defaultOffice={expenseDefaultOffice}
+        company={company}
+        onSaveExpense={handleSaveExpense}
       />
 
       <EmailReminderModal

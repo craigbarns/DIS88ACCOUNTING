@@ -27,14 +27,14 @@ export interface Partner {
   address: string;
   country: string;
   defaultCurrency: Currency;
-  paymentTerms: string; // e.g., "30% deposit, 70% before shipment", "100% L/C at sight", "Net 30"
+  paymentTerms: string;
   notes?: string;
   createdAt: string;
 }
 
 export type PaymentStatus = "draft" | "pending" | "partially_paid" | "paid" | "overdue" | "cancelled";
 
-export type PaymentMethod = "wire_transfer" | "fps_hk" | "lc" | "wise" | "check" | "credit_card" | "cash" | "other";
+export type PaymentMethod = "wire_transfer" | "fps_hk" | "lc" | "wise" | "check" | "credit_card" | "cash" | "alipay" | "wechat_pay" | "other";
 
 export type ShipmentMilestone = "production_pending" | "in_production" | "qc_inspection" | "vessel_booked" | "shipped_onboard" | "delivered";
 
@@ -71,7 +71,7 @@ export interface Installment {
 export interface OrderItem {
   id: string;
   description: string;
-  hsCode?: string; // e.g. 6109.10 or 9004.10
+  hsCode?: string;
   quantity: number;
   unitPrice: number;
   total: number;
@@ -79,13 +79,13 @@ export interface OrderItem {
 
 export interface OrderInvoice {
   id: string;
-  reference: string; // e.g. PI-2026-001, INV-2026-001 or PO-2026-001
+  reference: string;
   type: "sale" | "purchase";
-  documentType?: DocumentType; // Proforma vs Commercial Invoice vs Purchase Order
+  documentType?: DocumentType;
   partnerId: string;
   partnerName: string;
   title: string;
-  linkedOrderReference?: string; // Links sales invoice with purchase order to calculate margin
+  linkedOrderReference?: string;
   date: string;
   dueDate: string;
   currency: Currency;
@@ -100,16 +100,15 @@ export interface OrderInvoice {
   status: PaymentStatus;
   installments: Installment[];
   
-  // International Trade, Shipping & Customs Specifications (Packing List info)
-  incoterm?: string; // FOB, CIF, EXW, DDP, CFR, FCA
-  countryOfOrigin?: string; // China, Hong Kong, etc.
-  totalCartons?: string; // e.g. 40 CTNS
-  netWeight?: string; // e.g. 580 KG
-  grossWeight?: string; // e.g. 647 KG
-  measurementCbm?: string; // e.g. 4.11 CBMS
-  portOfLoading?: string; // e.g. Hong Kong / Shenzhen
-  portOfDischarge?: string; // e.g. Valencia / Rotterdam
-  shippingTerms?: string; // Extra notes
+  incoterm?: string;
+  countryOfOrigin?: string;
+  totalCartons?: string;
+  netWeight?: string;
+  grossWeight?: string;
+  measurementCbm?: string;
+  portOfLoading?: string;
+  portOfDischarge?: string;
+  shippingTerms?: string;
   
   shipmentMilestone?: ShipmentMilestone;
   etdDate?: string;
@@ -127,13 +126,13 @@ export interface PaymentEntry {
   orderReference: string;
   partnerId: string;
   partnerName: string;
-  type: "inflow" | "outflow"; // inflow = client payment, outflow = supplier payment
+  type: "inflow" | "outflow";
   amount: number;
   currency: Currency;
   exchangeRateToBase: number;
   convertedAmountBase: number;
   invoiceExchangeRate?: number;
-  fxGainLossBase?: number; // Gain / loss due to currency rate fluctuation
+  fxGainLossBase?: number;
   paymentDate: string;
   paymentMethod: PaymentMethod;
   bankAccount: string;
@@ -143,13 +142,51 @@ export interface PaymentEntry {
   createdAt: string;
 }
 
+// CHINA MAINLAND OFFICE EXPENSES (SHANGHAI & HANGZHOU)
+export type OfficeLocation = "shanghai" | "hangzhou";
+
+export type ExpenseCategory = 
+  | "rent_utilities"       // Office lease, management fees, electricity, internet
+  | "salaries_social"      // Local payroll, social security
+  | "travel_transport"     // High-speed trains, factory QC visits, Didi, flights
+  | "samples_qc"           // Sample prototyping, lab tests, QC tooling
+  | "meals_entertainment"  // Client & supplier dinners, team meals
+  | "office_supplies"      // Stationery, hardware, computer equipment
+  | "customs_express"      // SF Express, DHL, courier, customs clearance
+  | "marketing_software"   // Subscriptions, trade fairs, software
+  | "tax_legal"            // Accounting, audit, agency fees
+  | "other";
+
+export interface ExpenseItem {
+  id: string;
+  office: OfficeLocation;
+  title: string;
+  category: ExpenseCategory;
+  amount: number;
+  currency: Currency; // Usually CNY, but can be USD or HKD
+  exchangeRateToBase: number;
+  convertedAmountBase: number;
+  date: string;
+  paidDate?: string;
+  paymentMethod: PaymentMethod;
+  bankAccount?: string;
+  vendorName?: string;
+  invoiceReceiptNumber?: string; // Fapiao or receipt ref
+  status: "paid" | "pending";
+  isRecurring?: boolean;
+  recurringFrequency?: "monthly" | "quarterly" | "yearly";
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface BankAccount {
   id: string;
   bankName: string;
   accountName: string;
   accountNumber: string;
   swiftBic: string;
-  fpsId?: string; // HK Faster Payment System ID
+  fpsId?: string;
   currency: Currency;
   balance?: number;
 }
@@ -157,7 +194,7 @@ export interface BankAccount {
 export interface CompanyProfile {
   name: string;
   legalStatus: string;
-  registrationNumber: string; // HK BR No.
+  registrationNumber: string;
   address: string;
   city: string;
   country: string;
@@ -170,4 +207,4 @@ export interface CompanyProfile {
   bankAccounts: BankAccount[];
 }
 
-export type ActiveTab = "dashboard" | "sales" | "purchases" | "payments" | "margins" | "partners" | "settings";
+export type ActiveTab = "dashboard" | "sales" | "purchases" | "expenses" | "payments" | "margins" | "partners" | "settings";

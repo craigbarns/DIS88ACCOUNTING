@@ -105,6 +105,7 @@ async function getFullData() {
         partners: storeMap["partners"] || [],
         orders: storeMap["orders"] || [],
         payments: storeMap["payments"] || [],
+        expenses: storeMap["expenses"] || [],
         databaseEngine: "Railway PostgreSQL",
         updatedAt: new Date().toISOString(),
       };
@@ -129,6 +130,7 @@ async function getFullData() {
     partners: [],
     orders: [],
     payments: [],
+    expenses: [],
     databaseEngine: "Embedded Persistent Storage",
     updatedAt: new Date().toISOString(),
   };
@@ -172,6 +174,7 @@ async function saveAllData(allData) {
       await saveKeyData("partners", allData.partners || []);
       await saveKeyData("orders", allData.orders || []);
       await saveKeyData("payments", allData.payments || []);
+      await saveKeyData("expenses", allData.expenses || []);
       return true;
     } catch (err) {
       console.error("PostgreSQL bulk save error:", err);
@@ -199,6 +202,7 @@ app.get("/api/status", async (req, res) => {
     partnerCount: data.partners.length,
     orderCount: data.orders.length,
     paymentCount: data.payments.length,
+    expenseCount: (data.expenses || []).length,
     lastUpdated: data.updatedAt,
   });
 });
@@ -228,6 +232,11 @@ app.post("/api/payments", async (req, res) => {
   res.json({ success: true, payments: req.body });
 });
 
+app.post("/api/expenses", async (req, res) => {
+  await saveKeyData("expenses", req.body);
+  res.json({ success: true, expenses: req.body });
+});
+
 app.post("/api/restore", async (req, res) => {
   await saveAllData(req.body);
   res.json({ success: true });
@@ -239,132 +248,9 @@ app.post("/api/clear", async (req, res) => {
     partners: [],
     orders: [],
     payments: [],
+    expenses: [],
   });
   res.json({ success: true, message: "Workspace cleared" });
-});
-
-app.post("/api/demo", async (req, res) => {
-  const demoData = {
-    companyProfile: defaultCompanyProfile,
-    partners: [
-      {
-        id: "cli-siroko",
-        type: "client",
-        name: "Product & Sourcing Team",
-        companyName: "Siroko Solutions S.L.",
-        registrationNumber: "ESB52537651",
-        taxId: "ESB52537651",
-        email: "product@siroko.com",
-        phone: "+34 984 08 28 88",
-        address: "Plaza Seis de Agosto nº6-2º, Gijón (33207), Asturias",
-        country: "Spain",
-        defaultCurrency: "EUR",
-        paymentTerms: "30% Deposit on order confirmation, 70% before Bill of Lading (B/L) release",
-        notes: "Leading European sportswear, technical cycling & performance eyewear brand.",
-        createdAt: "2026-02-18",
-      },
-      {
-        id: "cli-1",
-        type: "client",
-        name: "Alexandre Dupont",
-        companyName: "Maison Luxe Distribution SAS",
-        registrationNumber: "FR829103948",
-        email: "a.dupont@maisonluxe.fr",
-        phone: "+33 1 42 68 00 12",
-        address: "24 Rue du Faubourg Saint-Honoré, 75008 Paris",
-        country: "France",
-        defaultCurrency: "EUR",
-        paymentTerms: "30% Deposit on order, 70% before Bill of Lading",
-        notes: "VIP European customer.",
-        createdAt: "2026-01-10",
-      },
-    ],
-    orders: [
-      {
-        id: "ord-1",
-        reference: "INV-2026-004",
-        type: "sale",
-        documentType: "commercial_invoice",
-        partnerId: "cli-siroko",
-        partnerName: "Siroko Solutions S.L.",
-        title: "Pro Cycling Performance Eyewear & UV400 Photochromic Lenses",
-        linkedOrderReference: "PO-2026-004",
-        date: "2026-02-18",
-        dueDate: "2026-04-30",
-        currency: "EUR",
-        exchangeRateToBase: 0.92,
-        items: [
-          { id: "item-11", description: "Siroko Pro K3s Photochromic Cycling Sunglasses", hsCode: "9004.10", quantity: 3000, unitPrice: 18.5, total: 55500.0 },
-          { id: "item-12", description: "Hard Shell EVA Custom Protective Cases with Carabiner", hsCode: "4202.92", quantity: 3000, unitPrice: 4.33, total: 13000.0 },
-        ],
-        subtotal: 68500.0,
-        taxRate: 0,
-        taxAmount: 0,
-        totalAmount: 68500.0,
-        totalPaid: 20550.0,
-        balanceDue: 47950.0,
-        status: "partially_paid",
-        incoterm: "FOB",
-        countryOfOrigin: "China",
-        totalCartons: "40 CTNS",
-        netWeight: "580 KG",
-        grossWeight: "647 KG",
-        measurementCbm: "4.11 CBMS",
-        portOfLoading: "Hong Kong Port",
-        portOfDischarge: "Valencia, Spain",
-        shippingTerms: "FOB Hong Kong Port",
-        notes: "30% initial deposit confirmed. Tooling & lens injection molding in progress.",
-        createdAt: "2026-02-18",
-        updatedAt: "2026-02-19",
-        installments: [
-          {
-            id: "inst-11",
-            title: "30% Deposit on Order Confirmation",
-            percentage: 30,
-            amount: 20550.0,
-            dueDate: "2026-02-22",
-            paidDate: "2026-02-19",
-            status: "paid",
-            paymentMethod: "wire_transfer",
-            bankAccount: "Wise Business Multi-Currency",
-            reference: "WIRE-SIROKO-0219",
-          },
-          {
-            id: "inst-12",
-            title: "70% Balance before Bill of Lading (B/L) Release",
-            percentage: 70,
-            amount: 47950.0,
-            dueDate: "2026-04-30",
-            status: "pending",
-          },
-        ],
-      },
-    ],
-    payments: [
-      {
-        id: "pay-1",
-        orderInvoiceId: "ord-1",
-        orderReference: "INV-2026-004",
-        partnerId: "cli-siroko",
-        partnerName: "Siroko Solutions S.L.",
-        type: "inflow",
-        amount: 20550.0,
-        currency: "EUR",
-        exchangeRateToBase: 0.92,
-        convertedAmountBase: 22336.96,
-        paymentDate: "2026-02-19",
-        paymentMethod: "wire_transfer",
-        bankAccount: "Wise Business Multi-Currency",
-        reference: "WIRE-SIROKO-0219",
-        installmentTitle: "30% Deposit on Order Confirmation",
-        notes: "30% Initial order deposit received from Siroko Solutions S.L. (Spain)",
-        createdAt: "2026-02-19",
-      },
-    ],
-  };
-
-  await saveAllData(demoData);
-  res.json({ success: true, message: "Demo data loaded" });
 });
 
 // ─── STATIC CLIENT ASSETS & SPA ROUTING ──────────────────────────────────────

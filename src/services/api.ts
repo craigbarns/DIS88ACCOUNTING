@@ -1,10 +1,11 @@
-import { CompanyProfile, OrderInvoice, Partner, PaymentEntry } from "../types";
+import { CompanyProfile, OrderInvoice, Partner, PaymentEntry, ExpenseItem } from "../types";
 
 export interface WorkspaceData {
   companyProfile: CompanyProfile;
   partners: Partner[];
   orders: OrderInvoice[];
   payments: PaymentEntry[];
+  expenses?: ExpenseItem[];
   updatedAt?: string;
 }
 
@@ -63,6 +64,19 @@ export async function syncPayments(payments: PaymentEntry[]): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payments),
+    });
+    return res.ok;
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function syncExpenses(expenses: ExpenseItem[]): Promise<boolean> {
+  try {
+    const res = await fetch("/api/expenses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(expenses),
     });
     return res.ok;
   } catch (err) {

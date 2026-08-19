@@ -44,6 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "sales", label: "Sales & Clients", icon: Receipt },
     { id: "purchases", label: "Purchases & Suppliers", icon: ShoppingBag },
+    { id: "expenses", label: "China Offices OPEX (SH/HZ)", icon: Building2 },
     { id: "payments", label: "Payments Journal", icon: ArrowLeftRight },
     { id: "margins", label: "Deal Profitability", icon: TrendingUp },
     { id: "partners", label: "Partners Directory", icon: Users },

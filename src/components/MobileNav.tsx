@@ -6,7 +6,8 @@ import {
   ArrowLeftRight, 
   Users, 
   Settings,
-  Plus
+  Plus,
+  Building
 } from "lucide-react";
 import { ActiveTab } from "../types";
 
@@ -50,6 +51,16 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           className="p-2.5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-lg shadow-blue-500/30 -mt-4 border-2 border-slate-950 active:scale-95 transition"
         >
           <Plus className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => setActiveTab("expenses")}
+          className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
+            activeTab === "expenses" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Building className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">OPEX</span>
         </button>
 
         <button
