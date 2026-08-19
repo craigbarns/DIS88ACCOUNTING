@@ -73,31 +73,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
 
-        {/* Base Currency Toggle & Logout */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-400 hidden sm:inline">Base Currency:</span>
-            <select
-              value={company.baseCurrency}
-              onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-              className="bg-slate-800 border border-slate-700 text-blue-300 font-bold px-2 py-0.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {currencies.map((curr) => (
-                <option key={curr} value={curr}>
-                  {curr} ({CURRENCY_SYMBOLS[curr]})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            onClick={onLogout}
-            title="Sign Out / Lock Session"
-            className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+        {/* Base Currency Toggle */}
+        <div className="flex items-center gap-2">
+          <Globe className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-slate-400 hidden sm:inline">Display Currency:</span>
+          <select
+            value={company.baseCurrency}
+            onChange={(e) => setBaseCurrency(e.target.value as Currency)}
+            className="bg-slate-800 border border-slate-700 text-blue-300 font-bold px-2 py-0.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+            {currencies.map((curr) => (
+              <option key={curr} value={curr}>
+                {curr} ({CURRENCY_SYMBOLS[curr]})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -153,6 +143,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
               <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            {/* Prominent Sign Out Button */}
+            <button
+              onClick={onLogout}
+              title="Sign Out / Lock Session"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 hover:border-rose-700 transition text-xs font-bold shadow-sm ml-1"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>

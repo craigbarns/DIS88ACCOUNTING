@@ -31,7 +31,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Overview</span>
+          <span className="text-[10px] mt-0.5">Home</span>
         </button>
 
         <button
@@ -53,16 +53,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         </button>
 
         <button
-          onClick={() => setActiveTab("purchases")}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-            activeTab === "purchases" ? "text-rose-400 font-bold" : "text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          <ShoppingBag className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Factory</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab("payments")}
           className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
             activeTab === "payments" ? "text-amber-400 font-bold" : "text-slate-400 hover:text-slate-200"
@@ -73,13 +63,13 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         </button>
 
         <button
-          onClick={() => setActiveTab("partners")}
+          onClick={() => setActiveTab("settings")}
           className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-            activeTab === "partners" ? "text-purple-400 font-bold" : "text-slate-400 hover:text-slate-200"
+            activeTab === "settings" ? "text-indigo-400 font-bold" : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          <Users className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Clients</span>
+          <Settings className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Settings</span>
         </button>
       </div>
     </div>

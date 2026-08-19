@@ -337,6 +337,7 @@ export function App() {
             company={company}
             onUpdateCompany={handleUpdateCompany}
             onReloadAllData={handleReloadAllData}
+            onLogout={handleLogout}
           />
         )}
       </main>

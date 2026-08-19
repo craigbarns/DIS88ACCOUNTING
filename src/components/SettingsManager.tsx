@@ -27,12 +27,14 @@ interface SettingsManagerProps {
   company: CompanyProfile;
   onUpdateCompany: (company: CompanyProfile) => void;
   onReloadAllData: () => void;
+  onLogout?: () => void;
 }
 
 export const SettingsManager: React.FC<SettingsManagerProps> = ({
   company,
   onUpdateCompany,
   onReloadAllData,
+  onLogout,
 }) => {
   const [formData, setFormData] = useState<CompanyProfile>(company);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -434,6 +436,25 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Section 5: Session & Security */}
+      {onLogout && (
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">Active Administrator Session</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Logged in as <strong className="text-blue-400">Admin</strong> • Lock access when leaving this device.
+            </p>
+          </div>
+
+          <button
+            onClick={onLogout}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+          >
+            <span>Sign Out & Lock Workspace</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
