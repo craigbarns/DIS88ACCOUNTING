@@ -32,6 +32,7 @@ import {
   syncExpenses 
 } from "./services/api";
 import { exportToExcel } from "./services/export";
+import { fetchLiveExchangeRates } from "./services/currency";
 
 import { LoginScreen } from "./components/LoginScreen";
 import { Navbar } from "./components/Navbar";
@@ -100,6 +101,18 @@ export function App() {
 
     // Perform immediately on mount
     performSync();
+
+    // Fetch live market FX rates on startup
+    fetchLiveExchangeRates().then((res) => {
+      if (res && res.rates) {
+        setCompany((prev) => {
+          const updated = { ...prev, exchangeRates: res.rates };
+          saveCompanyProfile(updated);
+          syncCompanyProfile(updated);
+          return updated;
+        });
+      }
+    });
 
     // Poll every 15 seconds so multiple users see each others updates automatically
     const interval = setInterval(performSync, 15000);

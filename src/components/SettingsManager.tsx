@@ -22,6 +22,7 @@ import {
   loadDemoDataset, 
   clearWorkspace 
 } from "../services/storage";
+import { fetchLiveExchangeRates } from "../services/currency";
 
 interface SettingsManagerProps {
   company: CompanyProfile;
@@ -39,6 +40,8 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [formData, setFormData] = useState<CompanyProfile>(company);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [isFetchingRates, setIsFetchingRates] = useState(false);
+  const [ratesNotice, setRatesNotice] = useState<string | null>(null);
   const [dbStatus, setDbStatus] = useState<{
     status: string;
     engine: string;
@@ -55,6 +58,27 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       .then((data) => setDbStatus(data))
       .catch(() => setDbStatus(null));
   }, []);
+
+  const handleFetchLiveRates = async () => {
+    setIsFetchingRates(true);
+    setRatesNotice("Fetching live interbank exchange rates from market APIs...");
+    const result = await fetchLiveExchangeRates();
+    setIsFetchingRates(false);
+
+    if (result && result.rates) {
+      const updatedProfile = {
+        ...formData,
+        exchangeRates: result.rates,
+      };
+      setFormData(updatedProfile);
+      onUpdateCompany(updatedProfile);
+      setRatesNotice(`✓ Live FX Rates synchronized successfully! (Updated: ${result.lastUpdated})`);
+      setTimeout(() => setRatesNotice(null), 5000);
+    } else {
+      setRatesNotice("❌ Unable to reach exchange rate provider. Keeping current rates.");
+      setTimeout(() => setRatesNotice(null), 4000);
+    }
+  };
 
   const handleFieldChange = (field: keyof CompanyProfile, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -286,14 +310,29 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         </div>
 
         {/* Section 2: Exchange Rates */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-emerald-400" />
-              <h2 className="text-base font-bold text-white">Exchange Rates Grid (Reference: 1 USD)</h2>
+              <h2 className="text-sm sm:text-base font-bold text-white">Live Exchange Rates Grid (Reference: 1 USD)</h2>
             </div>
-            <span className="text-xs text-slate-400">Customizable according to bank rates</span>
+            
+            <button
+              type="button"
+              onClick={handleFetchLiveRates}
+              disabled={isFetchingRates}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition shadow-sm self-start sm:self-auto active:scale-95"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isFetchingRates ? "animate-spin text-emerald-400" : "text-emerald-400"}`} />
+              <span>{isFetchingRates ? "Updating Rates..." : "⚡ Sync Live Market Rates"}</span>
+            </button>
           </div>
+
+          {ratesNotice && (
+            <div className="p-3 bg-blue-950/60 border border-blue-800 rounded-xl text-xs text-blue-300 font-semibold animate-in fade-in">
+              {ratesNotice}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>

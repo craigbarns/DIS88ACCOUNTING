@@ -79,3 +79,62 @@ export function formatDate(dateString: string | undefined | null): string {
     return dateString;
   }
 }
+
+// ─── LIVE REAL-TIME EXCHANGE RATE FETCHER ────────────────────────────────────
+export async function fetchLiveExchangeRates(): Promise<{
+  rates: ExchangeRates;
+  lastUpdated: string;
+} | null> {
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (!res.ok) throw new Error("Failed to fetch rates from primary API");
+    const data = await res.json();
+    
+    if (data && data.rates) {
+      const liveRates: ExchangeRates = {
+        USD: 1.0,
+        HKD: Number((data.rates.HKD || 7.82).toFixed(4)),
+        EUR: Number((data.rates.EUR || 0.92).toFixed(4)),
+        CNY: Number((data.rates.CNY || 7.24).toFixed(4)),
+        GBP: Number((data.rates.GBP || 0.79).toFixed(4)),
+        SGD: Number((data.rates.SGD || 1.34).toFixed(4)),
+        JPY: Number((data.rates.JPY || 155.0).toFixed(2)),
+        CAD: Number((data.rates.CAD || 1.36).toFixed(4)),
+        AUD: Number((data.rates.AUD || 1.52).toFixed(4)),
+      };
+
+      return {
+        rates: liveRates,
+        lastUpdated: data.time_last_update_utc || new Date().toUTCString(),
+      };
+    }
+  } catch (err) {
+    console.warn("Primary FX API failed, trying fallback...", err);
+    try {
+      const fallbackRes = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+      if (!fallbackRes.ok) throw new Error("Fallback failed");
+      const fallbackData = await fallbackRes.json();
+      
+      const liveRates: ExchangeRates = {
+        USD: 1.0,
+        HKD: Number((fallbackData.rates.HKD || 7.82).toFixed(4)),
+        EUR: Number((fallbackData.rates.EUR || 0.92).toFixed(4)),
+        CNY: Number((fallbackData.rates.CNY || 7.24).toFixed(4)),
+        GBP: Number((fallbackData.rates.GBP || 0.79).toFixed(4)),
+        SGD: Number((fallbackData.rates.SGD || 1.34).toFixed(4)),
+        JPY: Number((fallbackData.rates.JPY || 155.0).toFixed(2)),
+        CAD: Number((fallbackData.rates.CAD || 1.36).toFixed(4)),
+        AUD: Number((fallbackData.rates.AUD || 1.52).toFixed(4)),
+      };
+
+      return {
+        rates: liveRates,
+        lastUpdated: fallbackData.date || new Date().toISOString(),
+      };
+    } catch (fallbackErr) {
+      console.error("All FX APIs failed:", fallbackErr);
+      return null;
+    }
+  }
+  return null;
+}

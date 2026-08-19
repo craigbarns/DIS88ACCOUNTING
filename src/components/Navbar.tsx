@@ -62,11 +62,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
           <span className="font-semibold text-slate-300 hidden sm:inline">Live FX:</span>
           <div className="flex items-center gap-2 font-mono text-slate-300 text-[11px] truncate">
-            <span>USD/HKD <strong className="text-blue-400">7.82</strong></span>
+            <span>1 USD = <strong className="text-blue-400">{company.exchangeRates.HKD} HKD</strong></span>
             <span>•</span>
-            <span>EUR/USD <strong className="text-emerald-400">1.09</strong></span>
-            <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">USD/CNY <strong className="text-amber-400">7.24</strong></span>
+            <span>1 USD = <strong className="text-emerald-400">{company.exchangeRates.EUR} EUR</strong></span>
+            <span>•</span>
+            <span>1 USD = <strong className="text-amber-400">{company.exchangeRates.CNY} CNY</strong></span>
           </div>
         </div>
 
