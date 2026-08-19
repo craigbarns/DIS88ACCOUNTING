@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ActiveTab, CompanyProfile, OrderInvoice, Partner, PaymentEntry, Currency, PaymentMethod } from "./types";
 import { 
   loadCompanyProfile, 
@@ -11,9 +11,17 @@ import {
   savePayments,
   recordPayment 
 } from "./services/storage";
+import { 
+  fetchWorkspaceData, 
+  syncCompanyProfile, 
+  syncPartners, 
+  syncOrders, 
+  syncPayments 
+} from "./services/api";
 import { exportToExcel } from "./services/export";
 
 import { Navbar } from "./components/Navbar";
+import { MobileNav } from "./components/MobileNav";
 import { Dashboard } from "./components/Dashboard";
 import { SalesManager } from "./components/SalesManager";
 import { PurchasesManager } from "./components/PurchasesManager";
@@ -33,6 +41,30 @@ export function App() {
   const [partners, setPartners] = useState<Partner[]>(loadPartners);
   const [orders, setOrders] = useState<OrderInvoice[]>(loadOrders);
   const [payments, setPayments] = useState<PaymentEntry[]>(loadPayments);
+
+  // Initial cloud database sync
+  useEffect(() => {
+    fetchWorkspaceData().then((data) => {
+      if (data) {
+        if (data.companyProfile) {
+          setCompany(data.companyProfile);
+          saveCompanyProfile(data.companyProfile);
+        }
+        if (Array.isArray(data.partners)) {
+          setPartners(data.partners);
+          savePartners(data.partners);
+        }
+        if (Array.isArray(data.orders)) {
+          setOrders(data.orders);
+          saveOrders(data.orders);
+        }
+        if (Array.isArray(data.payments)) {
+          setPayments(data.payments);
+          savePayments(data.payments);
+        }
+      }
+    });
+  }, []);
 
   // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -55,11 +87,13 @@ export function App() {
     const updated = { ...company, baseCurrency: newCurrency };
     setCompany(updated);
     saveCompanyProfile(updated);
+    syncCompanyProfile(updated);
   };
 
   const handleUpdateCompany = (newCompany: CompanyProfile) => {
     setCompany(newCompany);
     saveCompanyProfile(newCompany);
+    syncCompanyProfile(newCompany);
   };
 
   const handleReloadAllData = () => {
@@ -67,6 +101,15 @@ export function App() {
     setPartners(loadPartners());
     setOrders(loadOrders());
     setPayments(loadPayments());
+
+    fetchWorkspaceData().then((data) => {
+      if (data) {
+        if (data.companyProfile) setCompany(data.companyProfile);
+        if (Array.isArray(data.partners)) setPartners(data.partners);
+        if (Array.isArray(data.orders)) setOrders(data.orders);
+        if (Array.isArray(data.payments)) setPayments(data.payments);
+      }
+    });
   };
 
   // Payment Handlers
@@ -91,6 +134,8 @@ export function App() {
     const result = recordPayment(order, paymentData, orders, payments, company);
     setOrders(result.updatedOrders);
     setPayments(result.updatedPayments);
+    syncOrders(result.updatedOrders);
+    syncPayments(result.updatedPayments);
   };
 
   const handleDeletePayment = (paymentId: string) => {
@@ -98,6 +143,7 @@ export function App() {
     const updated = payments.filter((p) => p.id !== paymentId);
     setPayments(updated);
     savePayments(updated);
+    syncPayments(updated);
   };
 
   // Email Reminder Handler
@@ -129,6 +175,7 @@ export function App() {
     }
     setOrders(updated);
     saveOrders(updated);
+    syncOrders(updated);
   };
 
   const handleDeleteOrder = (orderId: string) => {
@@ -136,6 +183,7 @@ export function App() {
     const updated = orders.filter((o) => o.id !== orderId);
     setOrders(updated);
     saveOrders(updated);
+    syncOrders(updated);
   };
 
   // Partner Handlers
@@ -161,6 +209,7 @@ export function App() {
     }
     setPartners(updated);
     savePartners(updated);
+    syncPartners(updated);
   };
 
   const handleDeletePartner = (partnerId: string) => {
@@ -168,6 +217,7 @@ export function App() {
     const updated = partners.filter((p) => p.id !== partnerId);
     setPartners(updated);
     savePartners(updated);
+    syncPartners(updated);
   };
 
   // Excel Export
@@ -178,7 +228,7 @@ export function App() {
   const currentEmailPartner = emailModalOrder ? partners.find((p) => p.id === emailModalOrder.partnerId) : undefined;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white pb-16 md:pb-0">
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -266,16 +316,23 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500">
+      <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             © {new Date().getFullYear()} <strong>{company.name}</strong> — Star House, Tsim Sha Tsui, Hong Kong. All rights reserved.
           </span>
           <span className="font-mono text-slate-400">
-            Base Currency: <strong className="text-blue-400">{company.baseCurrency}</strong> • Real-time FX Rates Matrix
+            Base Currency: <strong className="text-blue-400">{company.baseCurrency}</strong> • Cloud Database Synchronized
           </span>
         </div>
       </footer>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onQuickAction={() => handleOpenNewOrder("sale")}
+      />
 
       {/* Modals */}
       <AddPaymentModal

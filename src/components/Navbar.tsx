@@ -56,16 +56,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="font-semibold text-slate-300">Live Exchange Rates (Base USD):</span>
+          <span className="font-semibold text-slate-300">Live FX Rates:</span>
           <div className="hidden sm:flex items-center gap-3 font-mono text-slate-300">
             <span>1 USD = <strong className="text-blue-400">7.82 HKD</strong></span>
             <span>•</span>
             <span>1 USD = <strong className="text-emerald-400">0.92 EUR</strong></span>
             <span>•</span>
             <span>1 USD = <strong className="text-amber-400">7.24 CNY</strong></span>
-            <span>•</span>
-            <span>1 USD = <strong className="text-purple-400">0.79 GBP</strong></span>
           </div>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 text-[10px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Cloud DB Active
+          </span>
         </div>
 
         {/* Base Currency Toggle */}

@@ -1,0 +1,58 @@
+{
+  "companyProfile": {
+    "name": "DISTRICT 88 LTD",
+    "legalStatus": "Limited Liability Company (Hong Kong)",
+    "registrationNumber": "74892019-000-03-24-A",
+    "address": "UNIT NO. 532B ON 5/F STAR HOUSE BUILDING, NO.3 SALISBURY ROAD TSIM SHA TSUI",
+    "city": "Tsim Sha Tsui, Kowloon",
+    "country": "Hong Kong",
+    "phone": "+852 2888 8888",
+    "email": "contact@district88ltd.com",
+    "website": "www.district88ltd.com",
+    "baseCurrency": "USD",
+    "exchangeRates": {
+      "USD": 1,
+      "HKD": 7.82,
+      "EUR": 0.92,
+      "CNY": 7.24,
+      "GBP": 0.79,
+      "SGD": 1.34,
+      "JPY": 154.5,
+      "CAD": 1.36,
+      "AUD": 1.52
+    },
+    "bankAccounts": [
+      {
+        "id": "bank-1",
+        "bankName": "ICBC (ASIA) - Wanchai Branch (Bank Code: 072)",
+        "accountName": "DISTRICT88 LIMITED",
+        "accountNumber": "954.530002.378",
+        "swiftBic": "UBHKHKHH",
+        "currency": "USD",
+        "balance": 0
+      },
+      {
+        "id": "bank-2",
+        "bankName": "ICBC (ASIA) HKD Account",
+        "accountName": "DISTRICT88 LIMITED",
+        "accountNumber": "954.530002.378",
+        "swiftBic": "UBHKHKHH",
+        "currency": "HKD",
+        "balance": 0
+      },
+      {
+        "id": "bank-3",
+        "bankName": "Wise Business Multi-Currency",
+        "accountName": "DISTRICT88 LIMITED",
+        "accountNumber": "BE98 7654 3210 9876",
+        "swiftBic": "TRWIBEB1",
+        "currency": "EUR",
+        "balance": 0
+      }
+    ]
+  },
+  "partners": [],
+  "orders": [],
+  "payments": [],
+  "updatedAt": "2026-08-19T12:39:17.419Z"
+}
