@@ -1,23 +1,45 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const distPath = path.join(__dirname, "dist");
 
-// Body parser
 app.use(express.json({ limit: "25mb" }));
 
-// Determine database storage directory
+// ─── POSTGRESQL & LOCAL STORAGE HYBRID ENGINE ────────────────────────────────
+const isPostgres = Boolean(process.env.DATABASE_URL);
+let pgPool = null;
+
+if (isPostgres) {
+  pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  });
+
+  // Initialize PostgreSQL table
+  pgPool.query(`
+    CREATE TABLE IF NOT EXISTS d88_store (
+      key VARCHAR(50) PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `).then(() => {
+    console.log("✓ Connected to Railway PostgreSQL Database & verified table schema");
+  }).catch((err) => {
+    console.error("PostgreSQL initialization error:", err);
+  });
+}
+
+// Fallback Local File Storage
 const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
-
 const dbPath = path.join(dataDir, "database.json");
 
-// Default initial company profile
 const defaultCompanyProfile = {
   name: "DISTRICT 88 LTD",
   legalStatus: "Limited Liability Company (Hong Kong)",
@@ -71,320 +93,278 @@ const defaultCompanyProfile = {
   ],
 };
 
-function readDatabase() {
+async function getFullData() {
+  if (isPostgres && pgPool) {
+    try {
+      const res = await pgPool.query("SELECT key, data FROM d88_store");
+      const storeMap = {};
+      res.rows.forEach((r) => { storeMap[r.key] = r.data; });
+
+      return {
+        companyProfile: storeMap["companyProfile"] || defaultCompanyProfile,
+        partners: storeMap["partners"] || [],
+        orders: storeMap["orders"] || [],
+        payments: storeMap["payments"] || [],
+        databaseEngine: "Railway PostgreSQL",
+        updatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      console.error("PostgreSQL read error:", err);
+    }
+  }
+
+  // Fallback to local JSON file
   try {
     if (fs.existsSync(dbPath)) {
-      const content = fs.readFileSync(dbPath, "utf8");
-      return JSON.parse(content);
+      const parsed = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+      parsed.databaseEngine = "Embedded Persistent Storage";
+      return parsed;
     }
   } catch (err) {
-    console.error("Error reading database:", err);
+    console.error("File DB read error:", err);
   }
-  const initialDb = {
+
+  return {
     companyProfile: defaultCompanyProfile,
     partners: [],
     orders: [],
     payments: [],
+    databaseEngine: "Embedded Persistent Storage",
     updatedAt: new Date().toISOString(),
   };
-  writeDatabase(initialDb);
-  return initialDb;
 }
 
-function writeDatabase(data) {
+async function saveKeyData(key, data) {
+  if (isPostgres && pgPool) {
+    try {
+      await pgPool.query(
+        `INSERT INTO d88_store (key, data, updated_at) 
+         VALUES ($1, $2, NOW()) 
+         ON CONFLICT (key) 
+         DO UPDATE SET data = $2, updated_at = NOW()`,
+        [key, JSON.stringify(data)]
+      );
+      return true;
+    } catch (err) {
+      console.error(`PostgreSQL save error for ${key}:`, err);
+    }
+  }
+
+  // Also sync to file
   try {
-    const tmpPath = `${dbPath}.${Date.now()}.tmp`;
-    data.updatedAt = new Date().toISOString();
-    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf8");
-    fs.renameSync(tmpPath, dbPath);
+    const full = await getFullData();
+    full[key] = data;
+    full.updatedAt = new Date().toISOString();
+    const tmp = `${dbPath}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(full, null, 2), "utf8");
+    fs.renameSync(tmp, dbPath);
     return true;
   } catch (err) {
-    console.error("Error writing database:", err);
+    console.error("File save error:", err);
+    return false;
+  }
+}
+
+async function saveAllData(allData) {
+  if (isPostgres && pgPool) {
+    try {
+      await saveKeyData("companyProfile", allData.companyProfile || defaultCompanyProfile);
+      await saveKeyData("partners", allData.partners || []);
+      await saveKeyData("orders", allData.orders || []);
+      await saveKeyData("payments", allData.payments || []);
+      return true;
+    } catch (err) {
+      console.error("PostgreSQL bulk save error:", err);
+    }
+  }
+
+  try {
+    const tmp = `${dbPath}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(allData, null, 2), "utf8");
+    fs.renameSync(tmp, dbPath);
+    return true;
+  } catch (err) {
+    console.error("File save error:", err);
     return false;
   }
 }
 
 // ─── REST API ENDPOINTS ──────────────────────────────────────────────────────
 
-// 1. Health / Sync status
-app.get("/api/status", (req, res) => {
-  const db = readDatabase();
+app.get("/api/status", async (req, res) => {
+  const data = await getFullData();
   res.json({
     status: "online",
-    dbLocation: dbPath,
-    partnerCount: (db.partners || []).length,
-    orderCount: (db.orders || []).length,
-    paymentCount: (db.payments || []).length,
-    lastUpdated: db.updatedAt,
+    engine: isPostgres ? "Railway PostgreSQL" : "Embedded Persistent Storage",
+    partnerCount: data.partners.length,
+    orderCount: data.orders.length,
+    paymentCount: data.payments.length,
+    lastUpdated: data.updatedAt,
   });
 });
 
-// 2. Fetch All Workspace Data
-app.get("/api/data", (req, res) => {
-  const db = readDatabase();
-  res.json({
-    companyProfile: db.companyProfile || defaultCompanyProfile,
-    partners: db.partners || [],
-    orders: db.orders || [],
-    payments: db.payments || [],
-    updatedAt: db.updatedAt,
-  });
+app.get("/api/data", async (req, res) => {
+  const data = await getFullData();
+  res.json(data);
 });
 
-// 3. Update Company Profile
-app.post("/api/company", (req, res) => {
-  const db = readDatabase();
-  db.companyProfile = req.body;
-  writeDatabase(db);
-  res.json({ success: true, companyProfile: db.companyProfile });
+app.post("/api/company", async (req, res) => {
+  await saveKeyData("companyProfile", req.body);
+  res.json({ success: true, companyProfile: req.body });
 });
 
-// 4. Partners API
-app.post("/api/partners", (req, res) => {
-  const db = readDatabase();
-  if (Array.isArray(req.body)) {
-    db.partners = req.body;
-  } else {
-    const partner = req.body;
-    const idx = (db.partners || []).findIndex((p) => p.id === partner.id);
-    if (idx >= 0) {
-      db.partners[idx] = partner;
-    } else {
-      db.partners = [partner, ...(db.partners || [])];
-    }
-  }
-  writeDatabase(db);
-  res.json({ success: true, partners: db.partners });
+app.post("/api/partners", async (req, res) => {
+  await saveKeyData("partners", req.body);
+  res.json({ success: true, partners: req.body });
 });
 
-app.delete("/api/partners/:id", (req, res) => {
-  const db = readDatabase();
-  db.partners = (db.partners || []).filter((p) => p.id !== req.params.id);
-  writeDatabase(db);
-  res.json({ success: true, partners: db.partners });
+app.post("/api/orders", async (req, res) => {
+  await saveKeyData("orders", req.body);
+  res.json({ success: true, orders: req.body });
 });
 
-// 5. Orders & Invoices API
-app.post("/api/orders", (req, res) => {
-  const db = readDatabase();
-  if (Array.isArray(req.body)) {
-    db.orders = req.body;
-  } else {
-    const order = req.body;
-    const idx = (db.orders || []).findIndex((o) => o.id === order.id);
-    if (idx >= 0) {
-      db.orders[idx] = order;
-    } else {
-      db.orders = [order, ...(db.orders || [])];
-    }
-  }
-  writeDatabase(db);
-  res.json({ success: true, orders: db.orders });
+app.post("/api/payments", async (req, res) => {
+  await saveKeyData("payments", req.body);
+  res.json({ success: true, payments: req.body });
 });
 
-app.delete("/api/orders/:id", (req, res) => {
-  const db = readDatabase();
-  db.orders = (db.orders || []).filter((o) => o.id !== req.params.id);
-  writeDatabase(db);
-  res.json({ success: true, orders: db.orders });
+app.post("/api/restore", async (req, res) => {
+  await saveAllData(req.body);
+  res.json({ success: true });
 });
 
-// 6. Payments API
-app.post("/api/payments", (req, res) => {
-  const db = readDatabase();
-  if (Array.isArray(req.body)) {
-    db.payments = req.body;
-  } else {
-    const payment = req.body;
-    const idx = (db.payments || []).findIndex((p) => p.id === payment.id);
-    if (idx >= 0) {
-      db.payments[idx] = payment;
-    } else {
-      db.payments = [payment, ...(db.payments || [])];
-    }
-  }
-  writeDatabase(db);
-  res.json({ success: true, payments: db.payments });
-});
-
-app.delete("/api/payments/:id", (req, res) => {
-  const db = readDatabase();
-  db.payments = (db.payments || []).filter((p) => p.id !== req.params.id);
-  writeDatabase(db);
-  res.json({ success: true, payments: db.payments });
-});
-
-// 7. Full Backup Import / Restore
-app.post("/api/restore", (req, res) => {
-  const data = req.body;
-  const db = {
-    companyProfile: data.companyProfile || defaultCompanyProfile,
-    partners: Array.isArray(data.partners) ? data.partners : [],
-    orders: Array.isArray(data.orders) ? data.orders : [],
-    payments: Array.isArray(data.payments) ? data.payments : [],
-    updatedAt: new Date().toISOString(),
-  };
-  writeDatabase(db);
-  res.json({ success: true, db });
-});
-
-// 8. Clear Workspace
-app.post("/api/clear", (req, res) => {
-  const db = {
+app.post("/api/clear", async (req, res) => {
+  await saveAllData({
     companyProfile: defaultCompanyProfile,
     partners: [],
     orders: [],
     payments: [],
-    updatedAt: new Date().toISOString(),
-  };
-  writeDatabase(db);
+  });
   res.json({ success: true, message: "Workspace cleared" });
 });
 
-// 9. Load Demo Dataset
-app.post("/api/demo", (req, res) => {
-  const demoPartners = [
-    {
-      id: "cli-siroko",
-      type: "client",
-      name: "Product & Sourcing Team",
-      companyName: "Siroko Solutions S.L.",
-      registrationNumber: "ESB52537651",
-      taxId: "ESB52537651",
-      email: "product@siroko.com",
-      phone: "+34 984 08 28 88",
-      address: "Plaza Seis de Agosto nº6-2º, Gijón (33207), Asturias",
-      country: "Spain",
-      defaultCurrency: "EUR",
-      paymentTerms: "30% Deposit on order confirmation, 70% before Bill of Lading (B/L) release",
-      notes: "Leading European sportswear, technical cycling & performance eyewear brand.",
-      createdAt: "2026-02-18",
-    },
-    {
-      id: "cli-1",
-      type: "client",
-      name: "Alexandre Dupont",
-      companyName: "Maison Luxe Distribution SAS",
-      registrationNumber: "FR829103948",
-      email: "a.dupont@maisonluxe.fr",
-      phone: "+33 1 42 68 00 12",
-      address: "24 Rue du Faubourg Saint-Honoré, 75008 Paris",
-      country: "France",
-      defaultCurrency: "EUR",
-      paymentTerms: "30% Deposit on order, 70% before Bill of Lading",
-      notes: "VIP European customer.",
-      createdAt: "2026-01-10",
-    },
-    {
-      id: "sup-1",
-      type: "supplier",
-      name: "Mr. Zhang Wei",
-      companyName: "Shenzhen Precision Electronics Co., Ltd",
-      registrationNumber: "CN-91440300MA5",
-      email: "zhangwei@sz-precision.com",
-      phone: "+86 755 8329 1100",
-      address: "Building B4, High-Tech Industrial Park, Nanshan, Shenzhen",
-      country: "China",
-      defaultCurrency: "USD",
-      paymentTerms: "30% Production deposit, 70% before shipping release",
-      notes: "Primary electronics manufacturer.",
-      createdAt: "2026-01-05",
-    },
-  ];
-
-  const demoOrders = [
-    {
-      id: "ord-1",
-      reference: "INV-2026-004",
-      type: "sale",
-      documentType: "commercial_invoice",
-      partnerId: "cli-siroko",
-      partnerName: "Siroko Solutions S.L.",
-      title: "Pro Cycling Performance Eyewear & UV400 Photochromic Lenses",
-      linkedOrderReference: "PO-2026-004",
-      date: "2026-02-18",
-      dueDate: "2026-04-30",
-      currency: "EUR",
-      exchangeRateToBase: 0.92,
-      items: [
-        { id: "item-11", description: "Siroko Pro K3s Photochromic Cycling Sunglasses", hsCode: "9004.10", quantity: 3000, unitPrice: 18.5, total: 55500.0 },
-        { id: "item-12", description: "Hard Shell EVA Custom Protective Cases with Carabiner", hsCode: "4202.92", quantity: 3000, unitPrice: 4.33, total: 13000.0 },
-      ],
-      subtotal: 68500.0,
-      taxRate: 0,
-      taxAmount: 0,
-      totalAmount: 68500.0,
-      totalPaid: 20550.0,
-      balanceDue: 47950.0,
-      status: "partially_paid",
-      incoterm: "FOB",
-      countryOfOrigin: "China",
-      totalCartons: "40 CTNS",
-      netWeight: "580 KG",
-      grossWeight: "647 KG",
-      measurementCbm: "4.11 CBMS",
-      portOfLoading: "Hong Kong Port",
-      portOfDischarge: "Valencia, Spain",
-      shippingTerms: "FOB Hong Kong Port",
-      notes: "30% initial deposit confirmed. Tooling & lens injection molding in progress.",
-      createdAt: "2026-02-18",
-      updatedAt: "2026-02-19",
-      installments: [
-        {
-          id: "inst-11",
-          title: "30% Deposit on Order Confirmation",
-          percentage: 30,
-          amount: 20550.0,
-          dueDate: "2026-02-22",
-          paidDate: "2026-02-19",
-          status: "paid",
-          paymentMethod: "wire_transfer",
-          bankAccount: "Wise Business Multi-Currency",
-          reference: "WIRE-SIROKO-0219",
-        },
-        {
-          id: "inst-12",
-          title: "70% Balance before Bill of Lading (B/L) Release",
-          percentage: 70,
-          amount: 47950.0,
-          dueDate: "2026-04-30",
-          status: "pending",
-        },
-      ],
-    },
-  ];
-
-  const demoPayments = [
-    {
-      id: "pay-1",
-      orderInvoiceId: "ord-1",
-      orderReference: "INV-2026-004",
-      partnerId: "cli-siroko",
-      partnerName: "Siroko Solutions S.L.",
-      type: "inflow",
-      amount: 20550.0,
-      currency: "EUR",
-      exchangeRateToBase: 0.92,
-      convertedAmountBase: 22336.96,
-      paymentDate: "2026-02-19",
-      paymentMethod: "wire_transfer",
-      bankAccount: "Wise Business Multi-Currency",
-      reference: "WIRE-SIROKO-0219",
-      installmentTitle: "30% Deposit on Order Confirmation",
-      notes: "30% Initial order deposit received from Siroko Solutions S.L. (Spain)",
-      createdAt: "2026-02-19",
-    },
-  ];
-
-  const db = {
+app.post("/api/demo", async (req, res) => {
+  const demoData = {
     companyProfile: defaultCompanyProfile,
-    partners: demoPartners,
-    orders: demoOrders,
-    payments: demoPayments,
-    updatedAt: new Date().toISOString(),
+    partners: [
+      {
+        id: "cli-siroko",
+        type: "client",
+        name: "Product & Sourcing Team",
+        companyName: "Siroko Solutions S.L.",
+        registrationNumber: "ESB52537651",
+        taxId: "ESB52537651",
+        email: "product@siroko.com",
+        phone: "+34 984 08 28 88",
+        address: "Plaza Seis de Agosto nº6-2º, Gijón (33207), Asturias",
+        country: "Spain",
+        defaultCurrency: "EUR",
+        paymentTerms: "30% Deposit on order confirmation, 70% before Bill of Lading (B/L) release",
+        notes: "Leading European sportswear, technical cycling & performance eyewear brand.",
+        createdAt: "2026-02-18",
+      },
+      {
+        id: "cli-1",
+        type: "client",
+        name: "Alexandre Dupont",
+        companyName: "Maison Luxe Distribution SAS",
+        registrationNumber: "FR829103948",
+        email: "a.dupont@maisonluxe.fr",
+        phone: "+33 1 42 68 00 12",
+        address: "24 Rue du Faubourg Saint-Honoré, 75008 Paris",
+        country: "France",
+        defaultCurrency: "EUR",
+        paymentTerms: "30% Deposit on order, 70% before Bill of Lading",
+        notes: "VIP European customer.",
+        createdAt: "2026-01-10",
+      },
+    ],
+    orders: [
+      {
+        id: "ord-1",
+        reference: "INV-2026-004",
+        type: "sale",
+        documentType: "commercial_invoice",
+        partnerId: "cli-siroko",
+        partnerName: "Siroko Solutions S.L.",
+        title: "Pro Cycling Performance Eyewear & UV400 Photochromic Lenses",
+        linkedOrderReference: "PO-2026-004",
+        date: "2026-02-18",
+        dueDate: "2026-04-30",
+        currency: "EUR",
+        exchangeRateToBase: 0.92,
+        items: [
+          { id: "item-11", description: "Siroko Pro K3s Photochromic Cycling Sunglasses", hsCode: "9004.10", quantity: 3000, unitPrice: 18.5, total: 55500.0 },
+          { id: "item-12", description: "Hard Shell EVA Custom Protective Cases with Carabiner", hsCode: "4202.92", quantity: 3000, unitPrice: 4.33, total: 13000.0 },
+        ],
+        subtotal: 68500.0,
+        taxRate: 0,
+        taxAmount: 0,
+        totalAmount: 68500.0,
+        totalPaid: 20550.0,
+        balanceDue: 47950.0,
+        status: "partially_paid",
+        incoterm: "FOB",
+        countryOfOrigin: "China",
+        totalCartons: "40 CTNS",
+        netWeight: "580 KG",
+        grossWeight: "647 KG",
+        measurementCbm: "4.11 CBMS",
+        portOfLoading: "Hong Kong Port",
+        portOfDischarge: "Valencia, Spain",
+        shippingTerms: "FOB Hong Kong Port",
+        notes: "30% initial deposit confirmed. Tooling & lens injection molding in progress.",
+        createdAt: "2026-02-18",
+        updatedAt: "2026-02-19",
+        installments: [
+          {
+            id: "inst-11",
+            title: "30% Deposit on Order Confirmation",
+            percentage: 30,
+            amount: 20550.0,
+            dueDate: "2026-02-22",
+            paidDate: "2026-02-19",
+            status: "paid",
+            paymentMethod: "wire_transfer",
+            bankAccount: "Wise Business Multi-Currency",
+            reference: "WIRE-SIROKO-0219",
+          },
+          {
+            id: "inst-12",
+            title: "70% Balance before Bill of Lading (B/L) Release",
+            percentage: 70,
+            amount: 47950.0,
+            dueDate: "2026-04-30",
+            status: "pending",
+          },
+        ],
+      },
+    ],
+    payments: [
+      {
+        id: "pay-1",
+        orderInvoiceId: "ord-1",
+        orderReference: "INV-2026-004",
+        partnerId: "cli-siroko",
+        partnerName: "Siroko Solutions S.L.",
+        type: "inflow",
+        amount: 20550.0,
+        currency: "EUR",
+        exchangeRateToBase: 0.92,
+        convertedAmountBase: 22336.96,
+        paymentDate: "2026-02-19",
+        paymentMethod: "wire_transfer",
+        bankAccount: "Wise Business Multi-Currency",
+        reference: "WIRE-SIROKO-0219",
+        installmentTitle: "30% Deposit on Order Confirmation",
+        notes: "30% Initial order deposit received from Siroko Solutions S.L. (Spain)",
+        createdAt: "2026-02-19",
+      },
+    ],
   };
-  writeDatabase(db);
-  res.json({ success: true, message: "Demo data loaded", db });
+
+  await saveAllData(demoData);
+  res.json({ success: true, message: "Demo data loaded" });
 });
 
 // ─── STATIC CLIENT ASSETS & SPA ROUTING ──────────────────────────────────────
@@ -395,6 +375,6 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`DISTRICT 88 LTD Accounting Server running on port ${PORT}`);
-  console.log(`Database storage file: ${dbPath}`);
+  console.log(`DISTRICT 88 LTD Server online on port ${PORT}`);
+  console.log(`Database: ${isPostgres ? "Connected to Railway PostgreSQL" : "Local Embedded Storage"}`);
 });
