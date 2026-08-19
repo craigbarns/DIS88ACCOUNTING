@@ -11,7 +11,8 @@ import {
   PlusCircle, 
   Download,
   DollarSign,
-  Globe
+  Globe,
+  LogOut
 } from "lucide-react";
 import { ActiveTab, CompanyProfile, Currency } from "../types";
 import { CURRENCY_SYMBOLS } from "../services/currency";
@@ -24,6 +25,7 @@ interface NavbarProps {
   onNewPayment: () => void;
   onNewOrder: (type: "sale" | "purchase") => void;
   onExportExcel: () => void;
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewPayment,
   onNewOrder,
   onExportExcel,
+  onLogout,
 }) => {
   const currencies: Currency[] = ["USD", "HKD", "EUR", "CNY", "GBP", "SGD"];
 
@@ -70,21 +73,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
 
-        {/* Base Currency Toggle */}
-        <div className="flex items-center gap-2">
-          <Globe className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-400">Global Display Currency:</span>
-          <select
-            value={company.baseCurrency}
-            onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-            className="bg-slate-800 border border-slate-700 text-blue-300 font-bold px-2 py-0.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+        {/* Base Currency Toggle & Logout */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-slate-400 hidden sm:inline">Base Currency:</span>
+            <select
+              value={company.baseCurrency}
+              onChange={(e) => setBaseCurrency(e.target.value as Currency)}
+              className="bg-slate-800 border border-slate-700 text-blue-300 font-bold px-2 py-0.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {currencies.map((curr) => (
+                <option key={curr} value={curr}>
+                  {curr} ({CURRENCY_SYMBOLS[curr]})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={onLogout}
+            title="Sign Out / Lock Session"
+            className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
           >
-            {currencies.map((curr) => (
-              <option key={curr} value={curr}>
-                {curr} ({CURRENCY_SYMBOLS[curr]})
-              </option>
-            ))}
-          </select>
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

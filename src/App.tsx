@@ -20,6 +20,7 @@ import {
 } from "./services/api";
 import { exportToExcel } from "./services/export";
 
+import { LoginScreen } from "./components/LoginScreen";
 import { Navbar } from "./components/Navbar";
 import { MobileNav } from "./components/MobileNav";
 import { Dashboard } from "./components/Dashboard";
@@ -36,6 +37,14 @@ import { AddPartnerModal } from "./components/modals/AddPartnerModal";
 import { EmailReminderModal } from "./components/modals/EmailReminderModal";
 
 export function App() {
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return Boolean(
+      localStorage.getItem("d88_auth_token") || 
+      sessionStorage.getItem("d88_auth_token")
+    );
+  });
+
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [company, setCompany] = useState<CompanyProfile>(loadCompanyProfile);
   const [partners, setPartners] = useState<Partner[]>(loadPartners);
@@ -44,27 +53,38 @@ export function App() {
 
   // Initial cloud database sync
   useEffect(() => {
-    fetchWorkspaceData().then((data) => {
-      if (data) {
-        if (data.companyProfile) {
-          setCompany(data.companyProfile);
-          saveCompanyProfile(data.companyProfile);
+    if (isAuthenticated) {
+      fetchWorkspaceData().then((data) => {
+        if (data) {
+          if (data.companyProfile) {
+            setCompany(data.companyProfile);
+            saveCompanyProfile(data.companyProfile);
+          }
+          if (Array.isArray(data.partners)) {
+            setPartners(data.partners);
+            savePartners(data.partners);
+          }
+          if (Array.isArray(data.orders)) {
+            setOrders(data.orders);
+            saveOrders(data.orders);
+          }
+          if (Array.isArray(data.payments)) {
+            setPayments(data.payments);
+            savePayments(data.payments);
+          }
         }
-        if (Array.isArray(data.partners)) {
-          setPartners(data.partners);
-          savePartners(data.partners);
-        }
-        if (Array.isArray(data.orders)) {
-          setOrders(data.orders);
-          saveOrders(data.orders);
-        }
-        if (Array.isArray(data.payments)) {
-          setPayments(data.payments);
-          savePayments(data.payments);
-        }
-      }
-    });
-  }, []);
+      });
+    }
+  }, [isAuthenticated]);
+
+  // Handle Logout
+  const handleLogout = () => {
+    if (window.confirm("Lock and sign out of DISTRICT 88 LTD Financial Hub?")) {
+      localStorage.removeItem("d88_auth_token");
+      sessionStorage.removeItem("d88_auth_token");
+      setIsAuthenticated(false);
+    }
+  };
 
   // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -225,6 +245,11 @@ export function App() {
     exportToExcel(company, orders, payments, partners);
   };
 
+  // If not logged in, render the login page
+  if (!isAuthenticated) {
+    return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   const currentEmailPartner = emailModalOrder ? partners.find((p) => p.id === emailModalOrder.partnerId) : undefined;
 
   return (
@@ -238,6 +263,7 @@ export function App() {
         onNewPayment={() => handleOpenNewPayment()}
         onNewOrder={handleOpenNewOrder}
         onExportExcel={handleExportExcel}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
