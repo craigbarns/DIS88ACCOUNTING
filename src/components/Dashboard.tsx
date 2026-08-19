@@ -132,34 +132,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950/60 p-6 rounded-2xl border border-slate-800 shadow-xl">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950/60 p-4 sm:p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-800/60">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-800/60">
                 DISTRICT 88 LTD Financial Hub
               </span>
-              <span className="text-xs text-slate-400">Central, Hong Kong</span>
+              <span className="text-[10px] sm:text-xs text-slate-400">Hong Kong</span>
             </div>
-            <h1 className="text-2xl font-extrabold text-white mt-1">
+            <h1 className="text-lg sm:text-2xl font-extrabold text-white mt-1">
               Multi-Currency Cash Flow & Payment Tracker
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
               Real-time monitoring of client receivables, factory deposits, and deal profit margins.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-900/80 border border-slate-700/80 px-4 py-2.5 rounded-xl text-right">
-              <span className="text-[11px] text-slate-400 font-medium block">Net Realized Cash Position</span>
-              <span className={`text-lg font-bold font-mono ${netCashFlowBase >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+          <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-3">
+            <div className="bg-slate-900/80 border border-slate-700/80 p-2.5 sm:px-4 sm:py-2.5 rounded-xl text-left sm:text-right">
+              <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium block">Net Realized Cash</span>
+              <span className={`text-sm sm:text-lg font-bold font-mono ${netCashFlowBase >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {formatCurrency(netCashFlowBase, baseCurr)}
               </span>
             </div>
-            <div className="bg-slate-900/80 border border-slate-700/80 px-4 py-2.5 rounded-xl text-right">
-              <span className="text-[11px] text-slate-400 font-medium block">Projected Gross Margin</span>
-              <span className="text-lg font-bold font-mono text-blue-400">
-                {marginPercentage.toFixed(1)}% ({formatCurrency(projectedGrossMarginBase, baseCurr)})
+            <div className="bg-slate-900/80 border border-slate-700/80 p-2.5 sm:px-4 sm:py-2.5 rounded-xl text-left sm:text-right">
+              <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium block">Gross Margin</span>
+              <span className="text-sm sm:text-lg font-bold font-mono text-blue-400">
+                {marginPercentage.toFixed(1)}%
               </span>
             </div>
           </div>
@@ -167,94 +167,94 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Main KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* KPI 1: SALES */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700 transition">
+        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:border-slate-700 transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Client Sales</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <ArrowUpRight className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Client Sales</span>
+            <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-white">
+          <div className="mt-2 sm:mt-3">
+            <div className="text-base sm:text-2xl font-bold font-mono text-white truncate">
               {formatCurrency(totalSalesBase, baseCurr)}
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-800/80 gap-0.5">
               <span className="text-emerald-400 font-medium">
-                ✓ Collected : {formatCurrency(totalSalesPaidBase, baseCurr)}
+                Paid: {formatCurrency(totalSalesPaidBase, baseCurr)}
               </span>
               <span className="text-amber-400 font-medium">
-                Due : {formatCurrency(totalSalesPendingBase, baseCurr)}
+                Due: {formatCurrency(totalSalesPendingBase, baseCurr)}
               </span>
             </div>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="w-full bg-slate-800 rounded-full h-1 sm:h-1.5 mt-2 sm:mt-3 overflow-hidden">
             <div
-              className="bg-emerald-500 h-1.5 rounded-full transition-all"
+              className="bg-emerald-500 h-1 sm:h-1.5 rounded-full transition-all"
               style={{ width: `${totalSalesBase > 0 ? (totalSalesPaidBase / totalSalesBase) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* KPI 2: PURCHASES */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700 transition">
+        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:border-slate-700 transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Supplier Purchases</span>
-            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              <ArrowDownLeft className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Supplier Purchases</span>
+            <div className="p-1.5 sm:p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-white">
+          <div className="mt-2 sm:mt-3">
+            <div className="text-base sm:text-2xl font-bold font-mono text-white truncate">
               {formatCurrency(totalPurchasesBase, baseCurr)}
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-800/80 gap-0.5">
               <span className="text-rose-400 font-medium">
-                ✓ Paid : {formatCurrency(totalPurchasesPaidBase, baseCurr)}
+                Paid: {formatCurrency(totalPurchasesPaidBase, baseCurr)}
               </span>
               <span className="text-amber-400 font-medium">
-                Payables : {formatCurrency(totalPurchasesPendingBase, baseCurr)}
+                Due: {formatCurrency(totalPurchasesPendingBase, baseCurr)}
               </span>
             </div>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="w-full bg-slate-800 rounded-full h-1 sm:h-1.5 mt-2 sm:mt-3 overflow-hidden">
             <div
-              className="bg-rose-500 h-1.5 rounded-full transition-all"
+              className="bg-rose-500 h-1 sm:h-1.5 rounded-full transition-all"
               style={{ width: `${totalPurchasesBase > 0 ? (totalPurchasesPaidBase / totalPurchasesBase) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* KPI 3: RECEIVABLES */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700 transition">
+        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:border-slate-700 transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Receivables</span>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Clock className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Receivables</span>
+            <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-amber-400">
+          <div className="mt-2 sm:mt-3">
+            <div className="text-base sm:text-2xl font-bold font-mono text-amber-400 truncate">
               {formatCurrency(totalSalesPendingBase, baseCurr)}
             </div>
-            <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
-              Outstanding client deposits and balances on confirmed orders.
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-800/80 line-clamp-1">
+              Outstanding client balances.
             </p>
           </div>
         </div>
 
         {/* KPI 4: BANK ACCOUNTS */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700 transition">
+        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:border-slate-700 transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active HK Bank Accounts</span>
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              <Wallet className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">HK Bank Accounts</span>
+            <div className="p-1.5 sm:p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-sm font-semibold text-white">ICBC (ASIA) & Wise Multi-Currency</div>
-            <div className="text-xs text-slate-400 space-y-1 mt-2 pt-2 border-t border-slate-800/80">
+          <div className="mt-2 sm:mt-3">
+            <div className="text-xs font-semibold text-white truncate">ICBC (ASIA)</div>
+            <div className="text-[10px] sm:text-xs text-slate-400 space-y-0.5 mt-1 sm:mt-2 pt-1 sm:pt-2 border-t border-slate-800/80">
               {company.bankAccounts.slice(0, 2).map((bank) => {
                 const inflows = payments
                   .filter((p) => p.type === "inflow" && p.currency === bank.currency)
@@ -266,8 +266,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 return (
                   <div key={bank.id} className="flex justify-between">
-                    <span>{bank.bankName.includes("HKD") ? "ICBC HKD :" : "ICBC USD :"}</span>
-                    <span className={`font-mono ${balance >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                    <span>{bank.bankName.includes("HKD") ? "HKD :" : "USD :"}</span>
+                    <span className={`font-mono font-bold ${balance >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                       {formatCurrency(balance, bank.currency)}
                     </span>
                   </div>

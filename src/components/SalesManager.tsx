@@ -218,7 +218,7 @@ export const SalesManager: React.FC<SalesManagerProps> = ({
                   </div>
 
                   {/* Middle: Amount & Progress */}
-                  <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80 min-w-[280px]">
+                  <div className="bg-slate-950/60 p-3 sm:p-3.5 rounded-xl border border-slate-800/80 w-full lg:min-w-[280px] lg:w-auto">
                     <div className="flex justify-between items-baseline">
                       <span className="text-xs text-slate-400">Total Invoiced :</span>
                       <span className="font-mono font-extrabold text-base text-white">
@@ -233,21 +233,21 @@ export const SalesManager: React.FC<SalesManagerProps> = ({
                       />
                     </div>
 
-                    <div className="flex justify-between text-xs font-mono">
-                      <span className="text-emerald-400">Collected: {formatCurrency(order.totalPaid, order.currency)} ({paidPct.toFixed(0)}%)</span>
-                      <span className="text-amber-400 font-bold">Balance: {formatCurrency(order.balanceDue, order.currency)}</span>
+                    <div className="flex justify-between text-[11px] sm:text-xs font-mono">
+                      <span className="text-emerald-400">Paid: {formatCurrency(order.totalPaid, order.currency)} ({paidPct.toFixed(0)}%)</span>
+                      <span className="text-amber-400 font-bold">Due: {formatCurrency(order.balanceDue, order.currency)}</span>
                     </div>
                   </div>
 
                   {/* Right: Actions */}
-                  <div className="flex items-center gap-2 self-end lg:self-center">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 self-stretch lg:self-center justify-end pt-2 lg:pt-0 border-t border-slate-800/60 lg:border-t-0">
                     {order.balanceDue > 0 && (
                       <button
                         onClick={() => onRecordPayment(order)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center gap-1"
                       >
                         <DollarSign className="w-3.5 h-3.5" />
-                        + Collect
+                        Collect
                       </button>
                     )}
 
